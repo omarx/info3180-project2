@@ -4,9 +4,9 @@
 
 <template>
   <nav class="navbar navbar-expand-lg navbar-dark mb-3 bg-primary">
-    <a class="navbar-brand p-2" href="#">
-      <img class="photoLogo" src="../assets/photo.svg" alt="logo"/> Photogram
-    </a>
+    <router-link to="/" class="navbar-brand p-2">
+      <img class="photoLogo" src="/images/photo.svg" alt="logo"/> Photogram
+    </router-link>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>

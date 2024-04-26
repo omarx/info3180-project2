@@ -13,4 +13,4 @@ class User(db.Model):
     location = db.Column(db.String(255))
     biography = db.Column(db.Text)
     profile_photo = db.Column(db.String(255))
-    joined_on = db.Column(db.DateTime, default=datetime.utcnow)
+    joined_on = db.Column(db.DateTime, default=datetime.now)
