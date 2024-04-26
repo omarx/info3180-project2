@@ -4,6 +4,7 @@ import explore from '../pages/explore.vue';
 import profile from '../pages/profile.vue';
 import login from '../pages/login.vue';
 import register from '../pages/register.vue'
+import guards from "./guards.js";
 
 const routes = [
     { path: '/', component: home },
@@ -18,4 +19,5 @@ const router = createRouter({
     routes
 });
 
+router.beforeEach(guards);
 export default router;

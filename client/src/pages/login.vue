@@ -1,25 +1,38 @@
 <script setup>
 import { ref } from 'vue';
-import Navbar from '../components/navbar.vue';
+import { useStore } from 'vuex';
+import navbar from '../components/navbar.vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
+const store = useStore();
 const showLogin = ref(false);
 
 const toggleLoginForm = () => {
   showLogin.value = !showLogin.value;
 }
 
-const login = (event) => {
-  event.preventDefault(); // Prevent default form submission
+if(store.state.token){
+  router.push('/');
 
-  fetch('http://localhost:3001/auth/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      username: document.getElementById('username').value,
-      password: document.getElementById('password').value,
-    })
-  }).then(res=>res.json())
-      .then(res=>console.log(res));
+}
+
+const login = async (event) => {
+  event.preventDefault();
+
+  const credentials = {
+    username: document.getElementById('username').value,
+    password: document.getElementById('password').value,
+  };
+
+  await store.dispatch('login', credentials);
+
+  if (store.state.token) {
+    console.log('Login successful!');
+     router.push('/');
+  } else {
+    console.error('Login failed.');
+  }
 }
 </script>
 

@@ -1,4 +1,11 @@
 <script setup>
+import {useStore} from "vuex";
+
+const store = useStore();
+
+const logout=()=>{
+  store.dispatch('logout');
+}
 
 </script>
 
@@ -15,7 +22,12 @@
         <router-link to="/" class="nav-link" active-class="active">Home</router-link>
         <router-link to="/explore" class="nav-link" active-class="active">Explore</router-link>
         <router-link to="/profile" class="nav-link" active-class="active">My Profile</router-link>
-        <router-link to="/login" class="nav-link" active-class="active">Login</router-link>
+        <template v-if="!store.state.token">
+          <router-link to="/login" class="nav-link" active-class="active">Login</router-link>
+        </template>
+        <template v-if="store.state.token">
+          <span class="nav-link" @click="logout">Logout</span>
+        </template>
       </div>
     </div>
   </nav>
