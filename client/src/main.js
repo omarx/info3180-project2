@@ -1,7 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from "./router/index"; // Make sure the path is correct
+import './style.css'
+import router from "./router/index";
+import store from './utils/store.js';
 
 const app = createApp(App);
+app.use(store)
 app.use(router);
-app.mount('#app'); // This is the correct way to mount your
+app.mount('#app');
