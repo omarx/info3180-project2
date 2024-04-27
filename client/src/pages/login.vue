@@ -8,6 +8,7 @@ const router = useRouter();
 const store = useStore();
 const showLogin = ref(false);
 
+
 const toggleLoginForm = () => {
   showLogin.value = !showLogin.value;
 }
@@ -60,9 +61,7 @@ const login = async (event) => {
                 <button class="btn btn-success text-center" @click="toggleLoginForm">Login</button>
               </div>
               <div class="col-md p-2">
-                <router-link to="/register">
-                  <button class="btn btn-primary text-center">Register</button>
-                </router-link>
+                  <router-link to="/register" class="btn btn-primary text-center">Register</router-link>
               </div>
             </div>
           </div>
