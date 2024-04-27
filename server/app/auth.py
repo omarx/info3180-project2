@@ -16,14 +16,14 @@ def save_uploaded_file(file):
     if file:
         filename = secure_filename(file.filename)
         _, file_extension = os.path.splitext(filename)
-        random_name = str(uuid.uuid4())  # Generate a random UUID
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  # Get current timestamp
-        new_filename = f"{random_name}_{timestamp}{file_extension}"  # Construct new filename
+        random_name = str(uuid.uuid4())
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        new_filename = f"{random_name}_{timestamp}{file_extension}"
         project_root = os.path.join(current_app.root_path, '..')
         file_path = os.path.join(project_root, 'static', 'photo', 'profile_pics', new_filename)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)  # Ensure the directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         file.save(file_path)
-        return new_filename  # Return the new filename
+        return new_filename
     return None
 
 
