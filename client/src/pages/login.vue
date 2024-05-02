@@ -98,7 +98,7 @@ const login = async (event) => {
 <style scoped>
 .card {
   width: 100%;
-  height: 100%; /* Remove height if content overflows */
+  height: 100%;
 }
 
 .register-img {
