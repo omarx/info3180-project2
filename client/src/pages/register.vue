@@ -9,12 +9,10 @@ const file = ref(null);
 const router = useRouter();
 const store = useStore();
 
-// Redirect if already logged in
 if (store.state.token) {
   router.push('/');
 }
 
-// Handle file change with robust error handling
 const handleFileChange = (event) => {
   const files = event.target.files;
   if (files.length === 0) {
@@ -39,20 +37,32 @@ const handleFileChange = (event) => {
   }
 
   file.value = file; // Directly assign the file to file.value
-}
+};
 
-
-// Register new user with form data
 const register = async (event) => {
   event.preventDefault();
 
   const formData = new FormData(event.target);
+  const password = formData.get('password');
+  const confirmPassword = formData.get('confirm_password');
+ console.log(password);
+ console.log(confirmPassword);
+  // Check if passwords match
+  if (password !== confirmPassword) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Passwords do not match. Please try again.'
+    });
+    return;
+  }
+
   if (file.value) {
     formData.append('profile_photo', file.value);  // Access file directly
   }
 
   try {
-    const response = await fetch('http://localhost:3001/auth/register', {
+    const response = await fetch('/api/v1/register', {
       method: 'POST',
       body: formData
     });
@@ -78,11 +88,7 @@ const register = async (event) => {
       text: 'Registration failed: ' + error.message
     });
   }
-}
-
-
-
-
+};
 </script>
 
 <template>
@@ -102,6 +108,10 @@ const register = async (event) => {
             <div class="form-group mb-2 p-2">
               <label for="password">Password</label>
               <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+            </div>
+            <div class="form-group mb-2 p-2">
+              <label for="password">Confirm Password</label>
+              <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
             </div>
             <div class="form-group mb-2 p-2">
               <label for="email">Email</label>
@@ -127,7 +137,7 @@ const register = async (event) => {
               <label for="profile_photo">Profile Photo</label>
               <input type="file" class="form-control" id="profile_photo" name="profile_photo" @change="handleFileChange" >
             </div>
-            <button type="submit" class="btn btn-success mt-4 p-2">Register</button>
+            <button type="submit" class="btn btn-success mt-4 mb-4 p-2 ">Register</button>
           </form>
         </div>
      </div>
