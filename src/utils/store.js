@@ -9,7 +9,8 @@ const vuexLocal = new VuexPersistence({
 export default createStore({
     state: {
         token: null,
-        csrfToken: null,  // Added state for CSRF token
+        csrfToken: null,
+        userId:null
     },
     mutations: {
         setToken(state, token) {
@@ -17,6 +18,12 @@ export default createStore({
         },
         removeToken(state) {
             state.token = null;
+        },
+        setUserId(state, userId) {
+            state.userId = userId;
+        },
+        removeUserId(state) {
+            state.userId = null;
         },
         setCsrfToken(state, csrfToken) {  // Mutation to set CSRF token
             state.csrfToken = csrfToken;
@@ -50,6 +57,8 @@ export default createStore({
 
                 if (data.access_token) {
                     commit('setToken', data.access_token);
+                    commit('setUserId', data.user_id);
+                    console.log(data.user_id);
                     Swal.fire({
                         icon: 'success',
                         title: 'Login Successful',
@@ -68,7 +77,8 @@ export default createStore({
         },
         logout({ commit }) {
             commit('removeToken');
-            commit('removeCsrfToken');  // Also clear CSRF token on logout
+            commit('removeCsrfToken');// Also clear CSRF token on logout
+            commit("removeUserId");
             window.location.reload();
         }
     },

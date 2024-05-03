@@ -4,6 +4,7 @@ import explore from '../pages/explore.vue';
 import profile from '../pages/profile.vue';
 import login from '../pages/login.vue';
 import register from '../pages/register.vue'
+import addPost from '../pages/addPost.vue';
 import guards from "./guards.js";
 
 const routes = [
@@ -12,6 +13,7 @@ const routes = [
     { path: '/profile', component: profile },
     { path: '/login', component: login },
     { path: '/register', component: register },
+    { path: '/posts/new', component: addPost },
 ];
 
 const router = createRouter({

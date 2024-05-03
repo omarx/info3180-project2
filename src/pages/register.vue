@@ -145,7 +145,7 @@ const register = async (event) => {
   max-width: 800px;
 }
 
-.btn-success {
+.btn-success{
   background-color: #7ed321;
   border-color: #7ed321;
   width:18rem;

@@ -7,8 +7,8 @@ from flask import render_template, request, jsonify, send_from_directory
 from flask_wtf import CSRFProtect
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from .forms import UserForm
-from .models import db, Users
+from .forms import UserForm, PostForm
+from .models import db, Users, Posts
 
 csrf = CSRFProtect(app)
 
@@ -28,12 +28,13 @@ def index():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+
 @app.route('/api/v1/auth/register', methods=['POST'])
 def register():
     form = UserForm()
     if form.validate_on_submit():
-        # Check if username or email already exists
-        existing_user = Users.query.filter((Users.username == form.username.data) | (Users.email == form.email.data)).first()
+        existing_user = Users.query.filter(
+            (Users.username == form.username.data) | (Users.email == form.email.data)).first()
         if existing_user:
             errors = []
             if existing_user.username == form.username.data:
@@ -41,8 +42,6 @@ def register():
             if existing_user.email == form.email.data:
                 errors.append('Email is already registered.')
             return jsonify({"errors": errors}), 409
-
-        # Continue with registration if checks pass
         filename = None
         if form.profile_photo.data:
             filename = secure_filename(form.profile_photo.data.filename)
@@ -50,7 +49,7 @@ def register():
 
         user = Users(
             username=form.username.data,
-            password_hash=generate_password_hash(form.password.data),
+            password=generate_password_hash(form.password.data),
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             email=form.email.data,
@@ -71,7 +70,6 @@ def register():
         return jsonify({"errors": form_errors(form)}), 400
 
 
-
 @app.route('/api/v1/auth/login', methods=['POST'])
 def login():
     if not request.is_json:
@@ -81,11 +79,31 @@ def login():
     if not username or not password:
         return jsonify({"msg": "Missing username or password"}), 400
     user = Users.query.filter_by(username=username).first()
-    if user and check_password_hash(user.password_hash, password):
+    if user and check_password_hash(user.password, password):
         access_token = create_access_token(identity=username, expires_delta=timedelta(days=1))
-        return jsonify(access_token=access_token), 200
+        return jsonify(access_token=access_token, user_id=user.id), 200
     else:
         return jsonify({"msg": "Bad username or password"}), 401
+
+
+@app.route('/api/v1/posts/new', methods=['POST'])
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        filename = None
+        if form.photo.data:
+            filename = secure_filename(form.photo.data.filename)
+            form.photo.data.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        post = Posts(
+            caption=form.caption.data,
+            photo=filename,
+            user_id=form.user_id.data,
+        )
+        db.session.add(post)
+        db.session.commit()
+        return jsonify({"message": "Post created"}), 201
+    else:
+        return jsonify({"errors": form_errors(form)}), 400
 
 
 ###

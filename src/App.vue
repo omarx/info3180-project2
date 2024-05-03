@@ -8,6 +8,7 @@ store.dispatch('fetchCsrfToken');
 
 const csrfToken = computed(() => store.state.csrfToken);
 
+
 onMounted(() => {
   setTimeout(() => {
     console.log('CSRF Token:', csrfToken.value);
