@@ -6,13 +6,13 @@ class Users(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(256))
     first_name = db.Column(db.String(64))
     last_name = db.Column(db.String(64))
     email = db.Column(db.String(120), index=True, unique=True)
     location = db.Column(db.String(64))
     biography = db.Column(db.Text)
-    profile_photo = db.Column(db.String(128))
+    profile_photo = db.Column(db.String(256))
     joined_on = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
 

@@ -1,9 +1,22 @@
 <script setup>
+import { computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
 
+const store = useStore();
+
+store.dispatch('fetchCsrfToken');
+
+const csrfToken = computed(() => store.state.csrfToken);
+
+onMounted(() => {
+  setTimeout(() => {
+    console.log('CSRF Token:', csrfToken.value);
+  }, 1000);
+});
 </script>
 
 <template>
-<router-view/>
+  <router-view/>
 </template>
 
 <style scoped>

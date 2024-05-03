@@ -1,21 +1,23 @@
 <script setup>
-import navbar from "../components/navbar.vue";
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from "vuex";
+import { useStore } from 'vuex';
 import Swal from 'sweetalert2';
+import navbar from '../components/navbar.vue';
 
-const file = ref(null);
 const router = useRouter();
 const store = useStore();
+const file = ref(null);  // Ensure file is reactive
 
 if (store.state.token) {
   router.push('/');
 }
 
+const csrfToken = computed(() => store.state.csrfToken);
+
 const handleFileChange = (event) => {
-  const files = event.target.files;
-  if (files.length === 0) {
+  file.value = event.target.files[0];  // Update file ref to the selected file
+  if (!file.value) {
     Swal.fire({
       icon: 'error',
       title: 'Error',
@@ -24,8 +26,7 @@ const handleFileChange = (event) => {
     return;
   }
 
-  const file = files[0];  // Directly use the file object
-  const extension = file.name.split('.').pop().toLowerCase();
+  const extension = file.value.name.split('.').pop().toLowerCase();
   const allowedExtensions = ['jpg', 'jpeg', 'png'];
   if (!allowedExtensions.includes(extension)) {
     Swal.fire({
@@ -33,48 +34,41 @@ const handleFileChange = (event) => {
       title: 'Error',
       text: 'Invalid file format. Only ' + allowedExtensions.join(', ') + ' allowed.'
     });
-    return;
+    file.value = null;  // Reset file input if invalid
   }
-
-  file.value = file; // Directly assign the file to file.value
 };
 
 const register = async (event) => {
   event.preventDefault();
 
   const formData = new FormData(event.target);
-  const password = formData.get('password');
-  const confirmPassword = formData.get('confirm_password');
- console.log(password);
- console.log(confirmPassword);
-  // Check if passwords match
-  if (password !== confirmPassword) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Passwords do not match. Please try again.'
-    });
-    return;
-  }
-
   if (file.value) {
-    formData.append('profile_photo', file.value);  // Access file directly
+    formData.append('profile_photo', file.value);
   }
 
   try {
-    const response = await fetch('/api/v1/register', {
+    const response = await fetch('/api/v1/auth/register', {
       method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken.value
+      },
       body: formData
     });
+    const data = await response.json();
 
     if (!response.ok) {
+      let errorMessage = 'Registration failed.';
+      if (data.errors && data.errors.length > 0) {
+        errorMessage = data.errors.join(' '); // Join multiple errors into a single message
+      }
       Swal.fire({
         icon: 'error',
         title: 'Registration Failed',
-        text: `Failed with status: ${response.status}`
+        text: errorMessage
       });
       return;
     }
+
     Swal.fire({
       icon: 'success',
       title: 'Success',
@@ -119,11 +113,11 @@ const register = async (event) => {
             </div>
             <div class="form-group mb-2 p-2">
               <label for="firstname">First Name</label>
-              <input type="text" class="form-control" id="firstname" name="firstname" placeholder="Enter first name" required>
+              <input type="text" class="form-control" id="firstname" name="first_name" placeholder="Enter first name" required>
             </div>
             <div class="form-group mb-2 p-2">
               <label for="lastname">Last Name</label>
-              <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Enter last name" required>
+              <input type="text" class="form-control" id="lastname" name="last_name" placeholder="Enter last name" required>
             </div>
             <div class="form-group mb-2 p-2">
               <label for="location">Location</label>
