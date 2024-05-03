@@ -1,10 +1,14 @@
 import os
+from datetime import datetime
+from flask_jwt_extended import create_access_token
+from datetime import timedelta
 from . import app
 from flask import render_template, request, jsonify, send_from_directory
 from flask_wtf import CSRFProtect
 from werkzeug.utils import secure_filename
-
-from .models import db
+from werkzeug.security import generate_password_hash, check_password_hash
+from .forms import UserForm
+from .models import db, Users
 
 csrf = CSRFProtect(app)
 
@@ -24,36 +28,64 @@ def index():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/api/v1/auth/register', methods=['POST'])
+def register():
+    form = UserForm()
+    if form.validate_on_submit():
+        # Check if username or email already exists
+        existing_user = Users.query.filter((Users.username == form.username.data) | (Users.email == form.email.data)).first()
+        if existing_user:
+            errors = []
+            if existing_user.username == form.username.data:
+                errors.append('Username is already taken.')
+            if existing_user.email == form.email.data:
+                errors.append('Email is already registered.')
+            return jsonify({"errors": errors}), 409
 
-# @app.route('/api/v1/register', methods=['POST'])
-# def movies():
-#     if request.method == 'POST':
-#         form = MovieForm()
-#
-#         if form.validate_on_submit():
-#             filename = None
-#             if form.poster.data:
-#                 filename = secure_filename(form.poster.data.filename)
-#                 form.poster.data.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#
-#             movie = Movies(
-#                 title=form.title.data,
-#                 description=form.description.data,
-#                 poster=filename
-#             )
-#             db.session.add(movie)
-#             db.session.commit()
-#             return jsonify({
-#                 "message": "Movie Successfully added",
-#                 "title": movie.title,
-#                 "poster": movie.poster,
-#                 "description": movie.description
-#             }), 201
-#
-#         else:
-#             errors = form_errors(form)
-#             return jsonify({"errors": errors}), 400
+        # Continue with registration if checks pass
+        filename = None
+        if form.profile_photo.data:
+            filename = secure_filename(form.profile_photo.data.filename)
+            form.profile_photo.data.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
+        user = Users(
+            username=form.username.data,
+            password_hash=generate_password_hash(form.password.data),
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            email=form.email.data,
+            location=form.location.data,
+            biography=form.biography.data,
+            profile_photo=filename,
+            joined_on=datetime.now()
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        return jsonify({
+            "message": "User Successfully added",
+            "username": user.username,
+            "email": user.email
+        }), 201
+    else:
+        return jsonify({"errors": form_errors(form)}), 400
+
+
+
+@app.route('/api/v1/auth/login', methods=['POST'])
+def login():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    if not username or not password:
+        return jsonify({"msg": "Missing username or password"}), 400
+    user = Users.query.filter_by(username=username).first()
+    if user and check_password_hash(user.password_hash, password):
+        access_token = create_access_token(identity=username, expires_delta=timedelta(days=1))
+        return jsonify(access_token=access_token), 200
+    else:
+        return jsonify({"msg": "Bad username or password"}), 401
 
 
 ###

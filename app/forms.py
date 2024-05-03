@@ -6,14 +6,14 @@ from wtforms.validators import InputRequired, NumberRange, Email
 
 
 class UserForm(FlaskForm):
-    username = StringField('Title', validators=[InputRequired()])
+    username = StringField('Username', validators=[InputRequired()])
     password = PasswordField('Password', validators=[InputRequired()])
     first_name = StringField('First Name', validators=[InputRequired()])
     last_name = StringField('Last Name', validators=[InputRequired()])
     email = StringField('Email', validators=[InputRequired(), Email()])
     location = StringField('Location', validators=[InputRequired()])
     biography = TextAreaField('Biography', validators=[InputRequired()])
-    profile_photo = StringField('Profile Photo', validators=[InputRequired()])
+    profile_photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png'])])
 
 
 class PostForm(FlaskForm):

@@ -4,11 +4,12 @@ import Swal from 'sweetalert2';
 
 const vuexLocal = new VuexPersistence({
     storage: window.localStorage
-})
+});
 
 export default createStore({
     state: {
         token: null,
+        csrfToken: null,  // Added state for CSRF token
     },
     mutations: {
         setToken(state, token) {
@@ -16,23 +17,43 @@ export default createStore({
         },
         removeToken(state) {
             state.token = null;
+        },
+        setCsrfToken(state, csrfToken) {  // Mutation to set CSRF token
+            state.csrfToken = csrfToken;
+        },
+        removeCsrfToken(state) {  // Clear CSRF token
+            state.csrfToken = null;
         }
     },
     actions: {
-        async login({ commit }, credentials) {
+        async fetchCsrfToken({ commit }) {
             try {
-                const response = await fetch('/api/v1/login', {
+                const response = await fetch('/api/v1/csrf-token');
+                const data = await response.json();
+                commit('setCsrfToken', data.csrf_token);
+            } catch (error) {
+                console.error('Error fetching CSRF token:', error);
+            }
+        },
+        async login({ commit, state }, credentials) {
+            try {
+                console.log(state.csrfToken);
+                const response = await fetch('/api/v1/auth/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': state.csrfToken  // Use CSRF token from state
+                    },
                     body: JSON.stringify(credentials)
                 });
                 const data = await response.json();
-                if (data.token) {
-                    commit('setToken', data.token);
+
+                if (data.access_token) {
+                    commit('setToken', data.access_token);
                     Swal.fire({
                         icon: 'success',
                         title: 'Login Successful',
-                    })
+                    });
                 } else {
                     throw new Error(data.message || 'Failed to retrieve token.');
                 }
@@ -42,11 +63,12 @@ export default createStore({
                     icon: 'error',
                     title: 'Login failed',
                     text: 'Wrong username or password',
-                })
+                });
             }
         },
         logout({ commit }) {
             commit('removeToken');
+            commit('removeCsrfToken');  // Also clear CSRF token on logout
             window.location.reload();
         }
     },

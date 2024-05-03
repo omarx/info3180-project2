@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import {onMounted, ref} from 'vue';
 import { useStore } from 'vuex';
 import navbar from '../components/navbar.vue';
 import { useRouter } from 'vue-router';
@@ -7,6 +7,8 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const store = useStore();
 const showLogin = ref(false);
+
+
 
 
 const toggleLoginForm = () => {
