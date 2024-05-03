@@ -87,6 +87,7 @@ def login():
 
 
 @app.route('/api/v1/posts/new', methods=['POST'])
+
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
