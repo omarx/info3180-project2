@@ -10,10 +10,11 @@ import guards from "./guards.js";
 const routes = [
     { path: '/', component: home },
     { path: '/explore', component: explore },
-    { path: '/profile', component: profile },
     { path: '/login', component: login },
     { path: '/register', component: register },
     { path: '/posts/new', component: addPost },
+    {path: '/users/:userId', component: profile },
+    {path: '/profile/:userId', component: profile },
 ];
 
 const router = createRouter({

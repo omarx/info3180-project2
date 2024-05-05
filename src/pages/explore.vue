@@ -25,23 +25,34 @@ const getPosts = async () => {
     });
     if (response.ok) {
       const data = await response.json();
-      posts.value = data.posts.map(post => ({
-        ...post,
-        date: formatDate(post.created_at) // Format date when setting posts
-      }));
+      if (Array.isArray(data)) {
+        posts.value = data.map(post => ({
+          ...post,
+          date: formatDate(post.created_at)
+        }));
+      } else if (data && Array.isArray(data.posts)) {
+        posts.value = data.posts.map(post => ({
+          ...post,
+          date: formatDate(post.created_at)
+        }));
+      } else {
+        throw new Error('Data format is incorrect or empty');
+      }
     } else {
-      throw new Error('Failed to fetch posts');
+      throw new Error(`Failed to fetch posts: ${response.status}`);
     }
   } catch (error) {
     console.error('Error fetching posts:', error);
   }
 }
 
+
 const formatDate = (dateString) => {
   const options = { day: '2-digit', month: 'long', year: 'numeric' };
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', options);
 }
+
 
 onMounted(getPosts);
 </script>
@@ -56,7 +67,7 @@ onMounted(getPosts);
         <div class="row">
           <div class="col-md-12 mb-5 pb-3" v-for="post in posts" :key="post.id">
             <div class="card my-2">
-              <span class="top-area"><img :src="`/api/v1/images/${post.profile_photo}`" alt="{{post.username}} pic" class="img-fluid profile-image" /> {{post.username}}</span>
+              <router-link :to="`/users/${post.user_id}`" class="top-area" ><img :src="`/api/v1/images/${post.profile_photo}`" alt="{{post.username}} pic" class="img-fluid profile-image" /> &nbsp;{{post.username}}</router-link>
               <img :src="`/api/v1/images/${post.photo}`" class="card-img-top" alt="Post Image">
               <div class="card-body">
                 <p class="card-text">{{ post.caption }}</p>
@@ -117,5 +128,9 @@ onMounted(getPosts);
 }
 .top-area{
   padding:10px;
+  text-decoration: none;
+  color:black;
+  font-size:1.1em;
 }
+
 </style>
