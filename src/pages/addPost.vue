@@ -41,9 +41,9 @@ const newPost=async(event)=>{
   if(file.value){
     formData.append('photo',file.value);
   }
-  formData.append('user_id',userId.value);
+
   try{
-    const response = await fetch('/api/v1/posts/new', {
+    const response = await fetch(`/api/v1/users/${userId.value}/posts`, {
       method: 'POST',
       headers:{
         'X-CSRFToken': csrfToken.value,

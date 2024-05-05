@@ -19,4 +19,3 @@ class UserForm(FlaskForm):
 class PostForm(FlaskForm):
     caption = StringField('Title', validators=[InputRequired()])
     photo = FileField('Photo', validators=[FileAllowed(['jpg', 'png'])])
-    user_id = StringField('User ID', validators=[InputRequired()])
