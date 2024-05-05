@@ -9,6 +9,7 @@ const store = useStore();
 const router = useRouter();
 const csrfToken = computed(() => store.state.csrfToken)
 const userId=computed(() => store.state.userId);
+const jwtToken = computed(() => store.state.token);
 
 const file = ref(null);
 
@@ -45,7 +46,8 @@ const newPost=async(event)=>{
     const response = await fetch('/api/v1/posts/new', {
       method: 'POST',
       headers:{
-        'X-CSRFToken': csrfToken.value
+        'X-CSRFToken': csrfToken.value,
+        'Authorization': `Bearer ${jwtToken.value}`
       },
       body:formData
     });

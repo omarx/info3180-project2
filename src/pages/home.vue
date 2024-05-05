@@ -1,11 +1,13 @@
 <script setup>
 import navbar from "../components/navbar.vue";
+import {useRouter} from "vue-router";
+const router = useRouter();
+router.push("/explore");
 </script>
 
 <template>
   <div>
     <navbar/>
-    <h1>This is Home</h1>
   </div>
 </template>
 

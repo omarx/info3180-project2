@@ -1,6 +1,7 @@
 import os
+from sqlalchemy import func
 from datetime import datetime
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta
 from . import app
 from flask import render_template, request, jsonify, send_from_directory
@@ -8,7 +9,7 @@ from flask_wtf import CSRFProtect
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from .forms import UserForm, PostForm
-from .models import db, Users, Posts
+from .models import db, Users, Posts, Likes
 
 csrf = CSRFProtect(app)
 
@@ -80,14 +81,14 @@ def login():
         return jsonify({"msg": "Missing username or password"}), 400
     user = Users.query.filter_by(username=username).first()
     if user and check_password_hash(user.password, password):
-        access_token = create_access_token(identity=username, expires_delta=timedelta(days=1))
+        access_token = create_access_token(identity=username, expires_delta=timedelta(days=10))
         return jsonify(access_token=access_token, user_id=user.id), 200
     else:
         return jsonify({"msg": "Bad username or password"}), 401
 
 
 @app.route('/api/v1/posts/new', methods=['POST'])
-
+@jwt_required()
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
@@ -105,6 +106,35 @@ def new_post():
         return jsonify({"message": "Post created"}), 201
     else:
         return jsonify({"errors": form_errors(form)}), 400
+
+
+@app.route('/api/v1/posts', methods=['GET'])
+@jwt_required()
+def get_posts():
+    # Query to fetch posts along with their likes count
+    posts = db.session.query(
+        Posts.id,
+        Posts.caption,
+        Posts.photo,
+        Posts.created_at,
+        Users.username,
+        Users.profile_photo,
+        func.count(Likes.id).label('likes_count')
+    ).select_from(Posts
+                  ).join(Users
+                         ).outerjoin(Likes, Likes.post_id == Posts.id
+                                     ).group_by(Posts.id, Users.id
+                                                ).all()
+    posts_list = [{
+        "caption": post.caption,
+        "photo": post.photo,
+        "username": post.username,
+        "profile_photo": post.profile_photo,
+        "likes_count": post.likes_count,
+        "created_at": post.created_at.strftime('%Y-%m-%d %H:%M:%S')
+    } for post in posts]
+
+    return jsonify({"posts": posts_list}), 200
 
 
 ###
