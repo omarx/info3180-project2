@@ -9,7 +9,7 @@ from flask_wtf import CSRFProtect
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from .forms import UserForm, PostForm
-from .models import db, Users, Posts, Likes
+from .models import db, Users, Posts, Likes, Follows
 
 csrf = CSRFProtect(app)
 
@@ -114,10 +114,26 @@ def new_post(user_id):
         return jsonify({"errors": form_errors(form)}), 400
 
 
+@app.route('/api/v1/users/<int:user_id>/posts/', methods=['GET'])
+@jwt_required()
+def get_user_posts(user_id):
+    posts = Posts.query.filter_by(user_id=user_id).all()
+    if posts:
+        posts_data = [{
+            "post_id": post.id,
+            "caption": post.caption,
+            "photo": post.photo,
+            "created_at": post.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        } for post in posts]
+        return jsonify(posts_data), 200
+    else:
+        return jsonify({"message": "No posts found for this user"}), 404
+
+
 @app.route('/api/v1/posts', methods=['GET'])
 @jwt_required()
 def get_posts():
-    # Query to fetch posts along with their likes count
+    # Query posts along with associated user info and likes count
     posts = db.session.query(
         Posts.id,
         Posts.caption,
@@ -125,52 +141,63 @@ def get_posts():
         Posts.created_at,
         Users.username,
         Users.profile_photo,
+        Users.id.label('user_id'),
         func.count(Likes.id).label('likes_count')
     ).select_from(Posts
                   ).join(Users
                          ).outerjoin(Likes, Likes.post_id == Posts.id
                                      ).group_by(Posts.id, Users.id
                                                 ).all()
+
     posts_list = [{
         "caption": post.caption,
         "photo": post.photo,
         "username": post.username,
         "profile_photo": post.profile_photo,
+        "user_id": post.user_id,
         "likes_count": post.likes_count,
         "created_at": post.created_at.strftime('%Y-%m-%d %H:%M:%S')
     } for post in posts]
 
-    return jsonify({"posts": posts_list}), 200
+    return jsonify(posts_list), 200
 
 
-@app.route('/api/v1/users/<int:user_id>/posts', methods=['GET'])
-@jwt_required()
-def get_users_posts(user_id):
-    # Query to fetch posts along with their likes count for a specific user
-    posts = db.session.query(
-        Posts.id,
-        Posts.caption,
-        Posts.photo,
-        Posts.created_at,
-        Users.username,
+@app.route('/api/v1/user/<int:user_id>', methods=['GET'])
+def get_user_profile(user_id):
+    user = db.session.query(
+        Users.id,
+        Users.first_name,
+        Users.last_name,
         Users.profile_photo,
-        func.count(Likes.id).label('likes_count')
-    ).select_from(Posts
-                  ).join(Users
-                         ).outerjoin(Likes, Likes.post_id == Posts.id
-                                     ).filter(Users.id == user_id
-                                              ).group_by(Posts.id, Users.id
-                                                         ).all()
-    posts_list = [{
-        "caption": post.caption,
-        "photo": post.photo,
-        "username": post.username,
-        "profile_photo": post.profile_photo,
-        "likes_count": post.likes_count,
-        "created_at": post.created_at.strftime('%Y-%m-%d %H:%M:%S')
-    } for post in posts]
+        Users.biography,
+        Users.joined_on,
+        Users.location,
+        db.func.count(Posts.id).label('posts_count'),
+        db.func.count(Follows.follower_id.distinct()).label('follower_count')
+    ).outerjoin(Posts, Posts.user_id == Users.id
+                ).outerjoin(Follows, Follows.followed_id == Users.id
+                            ).filter(Users.id == user_id
+                                     ).group_by(Users.id).first()
 
-    return jsonify({"posts": posts_list}), 200
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    follower_ids = db.session.query(Follows.follower_id).filter(Follows.followed_id == user_id).all()
+    follower_ids_list = [f.follower_id for f in follower_ids]  #
+
+    response = {
+        'user_id': user.id,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'profile_photo': user.profile_photo,
+        'biography': user.biography,
+        'joined_on': user.joined_on.strftime('%Y-%m-%d'),
+        'location': user.location,
+        'posts_count': user.posts_count,
+        'follower_count': user.follower_count,
+        'followers_ids': follower_ids_list
+    }
+    return jsonify(response), 200
 
 
 @app.route('/api/v1/posts/<int:post_id>/like', methods=['POST'])
@@ -196,6 +223,30 @@ def like_post(post_id):
     db.session.commit()
 
     return jsonify({'message': 'Like added'}), 201
+
+
+@app.route('/api/v1/users/<int:followed_id>/follow', methods=['POST'])
+@jwt_required()
+def follow_user(followed_id):
+    identity = get_jwt_identity()
+    follower_id = identity['user_id']
+    if follower_id == followed_id:
+        return jsonify({"msg": "Users cannot follow themselves"}), 400
+    existing_follow = db.session.query(Follows).filter_by(follower_id=follower_id, followed_id=followed_id).first()
+    if existing_follow:
+        return jsonify({"msg": "Already following this user"}), 409
+    new_follow = Follows(
+        follower_id=follower_id,
+        followed_id=followed_id,
+        created_at=datetime.now()
+    )
+    db.session.add(new_follow)
+    db.session.commit()
+
+    return jsonify({"message": "Follow successful"}), 201
+
+
+# Note: Consider adding error handling for scenarios where either user does not exist.
 
 ###
 # The functions below should be applicable to all Flask apps.
